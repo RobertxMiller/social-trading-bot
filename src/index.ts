@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Web3Provider } from './web3Provider';
+import { TraderMonitor } from './services/traderMonitor';
 
 async function main() {
     console.log('🚀 Social Trading Bot starting...');
@@ -10,8 +11,12 @@ async function main() {
         const latestBlock = await web3.getLatestBlock();
         console.log(`Connected to Ethereum. Latest block: ${latestBlock}`);
         
-        // TODO: Initialize bot components
-        // TODO: Start monitoring traders
+        // Initialize trader monitoring
+        const monitor = new TraderMonitor(web3.getProvider());
+        await monitor.startMonitoring();
+        
+        console.log('✅ Bot initialized successfully');
+        console.log('Monitoring traders:', monitor.getWatchedTraders().length);
         
     } catch (error) {
         console.error('Failed to initialize:', error);
