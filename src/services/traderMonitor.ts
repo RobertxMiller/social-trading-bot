@@ -1,10 +1,12 @@
 import { JsonRpcProvider } from 'ethers';
 import { Trader, Transaction, TradingSignal } from '../types/trader';
+import { Database } from '../database';
 
 export class TraderMonitor {
     private provider: JsonRpcProvider;
     private watchedTraders: Set<string> = new Set();
     private isMonitoring: boolean = false;
+    private db: Database;
 
     // Some known successful traders (examples)
     private DEFAULT_TRADERS = [
@@ -14,6 +16,7 @@ export class TraderMonitor {
 
     constructor(provider: JsonRpcProvider) {
         this.provider = provider;
+        this.db = new Database();
         this.loadDefaultTraders();
     }
 
@@ -80,6 +83,9 @@ export class TraderMonitor {
             gasUsed: '0', // Would need receipt for actual gas used
         };
 
+        // Save transaction to database
+        await this.db.saveTransaction(transaction);
+
         // Check if this looks like a DEX transaction
         if (this.isDexTransaction(transaction)) {
             const signal = this.generateTradingSignal(transaction);
@@ -123,5 +129,19 @@ export class TraderMonitor {
 
     getWatchedTraders(): string[] {
         return Array.from(this.watchedTraders);
+    }
+
+    async getStats() {
+        const recentTx = await this.db.getRecentTransactions(10);
+        return {
+            watchedTraders: this.watchedTraders.size,
+            recentTransactions: recentTx.length,
+            isMonitoring: this.isMonitoring
+        };
+    }
+
+    async cleanup(): Promise<void> {
+        this.stopMonitoring();
+        await this.db.close();
     }
 }
