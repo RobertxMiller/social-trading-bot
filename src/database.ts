@@ -1,12 +1,14 @@
 import sqlite3 from 'sqlite3';
 import { promisify } from 'util';
 import { Trader, Transaction } from './types/trader';
+import { config } from './config';
 
 export class Database {
     private db: sqlite3.Database;
 
-    constructor(dbPath: string = './traders.sqlite') {
-        this.db = new sqlite3.Database(dbPath);
+    constructor(dbPath?: string) {
+        const path = dbPath || config.dbPath;
+        this.db = new sqlite3.Database(path);
         this.init();
     }
 

@@ -2,6 +2,7 @@
 
 import { Web3Provider } from './web3Provider';
 import { TraderMonitor } from './services/traderMonitor';
+import { ApiServer } from './server';
 
 async function main() {
     console.log('🚀 Social Trading Bot starting...');
@@ -14,6 +15,10 @@ async function main() {
         // Initialize trader monitoring
         const monitor = new TraderMonitor(web3.getProvider());
         await monitor.startMonitoring();
+        
+        // Start API server
+        const server = new ApiServer(monitor);
+        server.start();
         
         console.log('✅ Bot initialized successfully');
         console.log('Monitoring traders:', monitor.getWatchedTraders().length);
