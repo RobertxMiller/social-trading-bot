@@ -2,6 +2,7 @@
 
 import { Web3Provider } from './web3Provider';
 import { TraderMonitor } from './services/traderMonitor';
+import { CopyTradingService } from './services/copyTrading';
 import { ApiServer } from './server';
 
 async function main() {
@@ -14,6 +15,17 @@ async function main() {
         
         // Initialize trader monitoring
         const monitor = new TraderMonitor(web3.getProvider());
+        
+        // Initialize copy trading if wallet available
+        const wallet = web3.getWallet();
+        if (wallet) {
+            const copyTrading = new CopyTradingService(wallet);
+            monitor.setCopyTradingService(copyTrading);
+            console.log('📈 Copy trading enabled');
+        } else {
+            console.log('📊 Monitoring only (no private key provided)');
+        }
+        
         await monitor.startMonitoring();
         
         // Start API server

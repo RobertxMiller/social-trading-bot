@@ -1,12 +1,14 @@
 import { JsonRpcProvider } from 'ethers';
 import { Trader, Transaction, TradingSignal } from '../types/trader';
 import { Database } from '../database';
+import { CopyTradingService } from './copyTrading';
 
 export class TraderMonitor {
     private provider: JsonRpcProvider;
     private watchedTraders: Set<string> = new Set();
     private isMonitoring: boolean = false;
     private db: Database;
+    private copyTrading?: CopyTradingService;
 
     // Some known successful traders (examples)
     private DEFAULT_TRADERS = [
@@ -89,7 +91,7 @@ export class TraderMonitor {
         // Check if this looks like a DEX transaction
         if (this.isDexTransaction(transaction)) {
             const signal = this.generateTradingSignal(transaction);
-            this.emitSignal(signal);
+            await this.emitSignal(signal);
         }
     }
 
@@ -116,15 +118,28 @@ export class TraderMonitor {
         };
     }
 
-    private emitSignal(signal: TradingSignal): void {
+    private async emitSignal(signal: TradingSignal): Promise<void> {
         console.log('🚨 Trading Signal:', {
             trader: signal.trader.slice(0, 8) + '...',
             action: signal.action,
             confidence: signal.confidence
         });
         
+        // Execute copy trading if enabled
+        if (this.copyTrading && this.copyTrading.isActive()) {
+            await this.copyTrading.processTradingSignal(signal);
+        }
+        
         // TODO: Save to database
         // TODO: Emit to subscribers
+    }
+
+    setCopyTradingService(service: CopyTradingService): void {
+        this.copyTrading = service;
+    }
+
+    getCopyTradingService(): CopyTradingService | undefined {
+        return this.copyTrading;
     }
 
     getWatchedTraders(): string[] {

@@ -35,7 +35,14 @@ export class ApiServer {
         this.app.get('/api/stats', async (req, res) => {
             try {
                 const stats = await this.monitor.getStats();
-                res.json(stats);
+                const copyTrading = this.monitor.getCopyTradingService();
+                
+                const response = {
+                    ...stats,
+                    copyTrading: copyTrading ? copyTrading.getSettings() : { enabled: false }
+                };
+                
+                res.json(response);
             } catch (error) {
                 res.status(500).json({ error: 'Failed to get stats' });
             }
@@ -93,9 +100,11 @@ export class ApiServer {
                                         ? '<span class="online">🟢 Bot is running</span>'
                                         : '<span class="offline">🔴 Bot is offline</span>';
                                 
+                                const copyStatus = stats.copyTrading.enabled ? '🟢 Enabled' : '🔴 Disabled';
                                 document.getElementById('stats').innerHTML = 
                                     '<div class="stat-box"><strong>' + stats.watchedTraders + '</strong><br>Traders</div>' +
-                                    '<div class="stat-box"><strong>' + stats.recentTransactions + '</strong><br>Recent TXs</div>';
+                                    '<div class="stat-box"><strong>' + stats.recentTransactions + '</strong><br>Recent TXs</div>' +
+                                    '<div class="stat-box"><strong>' + copyStatus + '</strong><br>Copy Trading</div>';
                             } catch (e) {
                                 document.getElementById('status').innerHTML = '<span class="offline">🔴 API Error</span>';
                             }
